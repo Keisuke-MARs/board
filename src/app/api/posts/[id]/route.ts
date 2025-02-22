@@ -1,13 +1,15 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+type Context = {
+    params: { id: string }
+    searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export async function GET(request: NextRequest, context: Context) {
     try {
         const post = await prisma.post.findUnique({
-            where: { id: params.id },
+            where: { id: context.params.id },
         })
         if (!post) {
             return NextResponse.json({ error: "Post not found" }, { status: 404 })
@@ -19,14 +21,11 @@ export async function GET(
     }
 }
 
-export async function PUT(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: Context) {
     try {
         const { title, content } = await request.json()
         const post = await prisma.post.update({
-            where: { id: params.id },
+            where: { id: context.params.id },
             data: { title, content },
         })
         return NextResponse.json(post)
@@ -36,13 +35,10 @@ export async function PUT(
     }
 }
 
-export async function DELETE(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: Context) {
     try {
         await prisma.post.delete({
-            where: { id: params.id },
+            where: { id: context.params.id },
         })
         return NextResponse.json({ message: "Post deleted" })
     } catch (error) {
