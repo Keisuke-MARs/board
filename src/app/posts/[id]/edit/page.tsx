@@ -3,23 +3,64 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
+type Post = {
+    id: string
+    title: string
+    content: string
+    createdAt: Date
+}
+
 export default function EditPost({ params }: { params: { id: string } }) {
     const [title, setTitle] = useState("")
     const [content, setContent] = useState("")
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const router = useRouter()
 
     useEffect(() => {
-        //APIでデータを取得
-        setTitle("サンプル投稿")
-        setContent("投稿内容")
-    }, [])
+        const fetchPost = async () => {
+            try {
+                const response = await fetch(`/api/posts/${params.id}`)
+                if (!response.ok) {
+                    throw new Error("投稿の取得に失敗しました")
+                }
+                const post: Post = await response.json()
+                setTitle(post.title)
+                setContent(post.content)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "未知のエラーが発生しました")
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchPost()
+    }, [params.id])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         //APIで投稿を更新
-        console.log("投稿更新:", { id: params.id, title, content })
-        router.push(`/posts/${params.id}`)
+        setIsLoading(true)
+        try {
+            const response = await fetch(`/api/posts/${params.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ title, content }),
+            })
+            if (!response.ok) {
+                throw new Error("投稿の更新に失敗しました")
+            }
+            router.push(`/posts/${params.id}`)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "未知のエラーが発生しました")
+            setIsLoading(false)
+        }
     }
+
+    if (isLoading) return <div>読み込み中...</div>
+    if (error) return <div>エラー:{error}</div>
 
     return (
         <main className="container mx-auto px-4 py-8">
@@ -50,8 +91,12 @@ export default function EditPost({ params }: { params: { id: string } }) {
                         required
                     ></textarea>
                 </div>
-                <button type="submit" className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
-                    更新する
+                <button
+                    type="submit"
+                    className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+                    disabled={isLoading}
+                >
+                    {isLoading ? "更新中..." : "更新する"}
                 </button>
             </form>
         </main>

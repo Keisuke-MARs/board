@@ -13,8 +13,18 @@ export default function CreatePost() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         // ここでバックエンドAPIを呼び出して投稿を作成します（後で実装）
-        console.log("投稿作成:", { title, content })
-        router.push("/")
+        const response = await fetch("/api/posts", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title, content }),
+        })
+        if (response.ok) {
+            router.push("/")
+        } else {
+            console.error("投稿の作成に失敗しました")
+        }
     }
 
     return (

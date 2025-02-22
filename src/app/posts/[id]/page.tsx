@@ -1,14 +1,30 @@
 import Link from "next/link"
+import { notFound } from "next/navigation"
+import { PrismaClient } from "@prisma/client"
 
-export default function PostDetail({ params }: { params: { id: string } }) {
+const prisma = new PrismaClient()
+
+type Post = {
+    id: string
+    title: string
+    content: string
+    createdAt: Date
+}
+
+async function getPost(id: string): Promise<Post | null> {
+    return await prisma.post.findUnique({
+        where: { id }
+    })
+}
+
+
+export default async function PostDetail({ params }: { params: { id: string } }) {
     // ここでバックエンドAPIを呼び出して投稿データを取得します（後で実装）
-    const post = {
-        id: params.id,
-        title: "サンプル投稿",
-        content: "これはサンプルの投稿内容です。",
-        createdAt: new Date().toISOString(),
-    }
+    const post = await getPost(params.id)
 
+    if (!post) {
+        notFound()
+    }
     return (
         <main className="container mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
