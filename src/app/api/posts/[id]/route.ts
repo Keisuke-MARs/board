@@ -1,16 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-type Props = {
+interface RouteContext {
     params: {
         id: string
     }
 }
 
-export async function GET(req: NextRequest, props: Props) {
+export async function GET(_request: NextRequest, context: RouteContext) {
     try {
         const post = await prisma.post.findUnique({
-            where: { id: props.params.id },
+            where: { id: context.params.id },
         })
         if (!post) {
             return NextResponse.json({ error: "Post not found" }, { status: 404 })
@@ -22,11 +22,11 @@ export async function GET(req: NextRequest, props: Props) {
     }
 }
 
-export async function PUT(req: NextRequest, props: Props) {
+export async function PUT(request: NextRequest, context: RouteContext) {
     try {
-        const { title, content } = await req.json()
+        const { title, content } = await request.json()
         const post = await prisma.post.update({
-            where: { id: props.params.id },
+            where: { id: context.params.id },
             data: { title, content },
         })
         return NextResponse.json(post)
@@ -36,10 +36,10 @@ export async function PUT(req: NextRequest, props: Props) {
     }
 }
 
-export async function DELETE(req: NextRequest, props: Props) {
+export async function DELETE(_request: NextRequest, context: RouteContext) {
     try {
         await prisma.post.delete({
-            where: { id: props.params.id },
+            where: { id: context.params.id },
         })
         return NextResponse.json({ message: "Post deleted" })
     } catch (error) {
