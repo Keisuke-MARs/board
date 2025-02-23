@@ -1,18 +1,24 @@
 import Link from "next/link"
-import { PrismaClient } from "@prisma/client"
+import { createClient } from "@supabase/supabase-js"
 
-const prisma = new PrismaClient()
+// Supabaseクライアントの初期化
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+
+type Post = {
+  id: string
+  title: string
+  content: string
+  created_at: string
+}
 
 export default async function Home() {
-  type Post = {
-    id: string;
-    title: string;
-    content: string;
-    createdAt: Date;
+  // Supabaseから投稿を取得
+  const { data: posts, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching posts:", error)
+    return <div>Error loading posts</div>
   }
-  const posts: Post[] = await prisma.post.findMany({
-    orderBy: { createdAt: "desc" },
-  })
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -21,12 +27,12 @@ export default async function Home() {
         新規投稿
       </Link>
       <div className="mt-8 grid gap-4">
-        {posts.map((post) => (
+        {posts.map((post: Post) => (
           <div key={post.id} className="border p-4 rounded">
             <Link href={`/posts/${post.id}`} className="text-xl font-semibold hover:underline">
               {post.title}
             </Link>
-            <p className="text-gray-600 text-sm mt-2">投稿日: {new Date(post.createdAt).toLocaleString()}</p>
+            <p className="text-gray-600 text-sm mt-2">投稿日: {new Date(post.created_at).toLocaleString()}</p>
           </div>
         ))}
       </div>

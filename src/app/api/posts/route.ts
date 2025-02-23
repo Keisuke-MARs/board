@@ -1,30 +1,31 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NextResponse } from "next/server"
+import { supabase } from "@/lib/supabase"
 
-const prisma = new PrismaClient()
-
-//投稿の取得
 export async function GET() {
     try {
-        const posts = await prisma.post.findMany({
-            orderBy: { createdAt: "desc" },
-        })
-        return NextResponse.json(posts)
+        const { data, error } = await supabase.from("posts").select("*").order("created_at", { ascending: false })
+
+        if (error) throw error
+
+        return NextResponse.json(data)
     } catch (error) {
-        console.error("投稿の取得に失敗しました", error)
-        return NextResponse.json({ error: "投稿の取得に失敗しました" }, { status: 500 })
+        console.error("Failed to fetch posts:", error)
+        return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 })
     }
 }
 
 export async function POST(request: Request) {
     try {
         const { title, content } = await request.json()
-        const post = await prisma.post.create({
-            data: { title, content },
-        })
-        return NextResponse.json(post, { status: 201 })
+
+        const { data, error } = await supabase.from("posts").insert([{ title, content }]).select().single()
+
+        if (error) throw error
+
+        return NextResponse.json(data, { status: 201 })
     } catch (error) {
-        console.error("投稿の作成に失敗しました", error)
-        return NextResponse.json({ error: "投稿の作成に失敗しました" }, { status: 500 })
+        console.error("Failed to create post:", error)
+        return NextResponse.json({ error: "Failed to create post" }, { status: 500 })
     }
 }
+
